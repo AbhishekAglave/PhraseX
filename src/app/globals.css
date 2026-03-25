@@ -1,0 +1,84 @@
+@import 'tailwindcss';
+
+:root {
+  --background: #020617;
+  --foreground: #e2e8f0;
+  --surface: rgba(15, 23, 42, 0.74);
+  --border: rgba(148, 163, 184, 0.16);
+  --font-sans: 'Space Grotesk', 'Avenir Next', 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', monospace;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  background: var(--background);
+  background-repeat: no-repeat;
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: -20vh -10vw;
+  z-index: -1;
+  background-image:
+    radial-gradient(circle at top, rgba(34, 211, 238, 0.1), transparent 34%),
+    linear-gradient(
+      135deg,
+      transparent 0%,
+      transparent 42%,
+      rgba(148, 163, 184, 0.035) 42.4%,
+      rgba(148, 163, 184, 0.035) 42.8%,
+      transparent 43.2%,
+      transparent 100%
+    ),
+    linear-gradient(
+      45deg,
+      transparent 0%,
+      transparent 48%,
+      rgba(148, 163, 184, 0.028) 48.3%,
+      rgba(148, 163, 184, 0.028) 48.7%,
+      transparent 49%,
+      transparent 100%
+    );
+
+  background-size:
+    100% 100%,
+    140% 140%,
+    140% 140%;
+  background-position:
+    center top,
+    center center,
+    center center;
+  mask-image: radial-gradient(circle at center, black 52%, transparent 100%);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.28);
+  color: white;
+}
