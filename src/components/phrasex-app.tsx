@@ -530,8 +530,11 @@ export function PhraseXApp() {
                 )}
               </div>
             </GlassCard>
-            {/* FOOTER */}
-            <GlassCard className="mt-5">
+            {/* FOOTER — order-6 keeps it last on mobile, where the column
+                wrappers collapse to `display: contents` and every card becomes
+                a grid item. Without it the default `order: 0` sorts ahead of
+                the order-1..5 cards and the footer jumps to the top. */}
+            <GlassCard className="order-6">
               <div className="px-6 pt-5 pb-6">
                 <p className="text-[11px] font-semibold tracking-[0.2em] text-ink-3 uppercase">What PhraseX does</p>
 
@@ -542,7 +545,7 @@ export function PhraseXApp() {
                 </div>
 
                 <p className="mt-5 border-t border-white/38 pt-4 text-center text-xs font-medium text-ink-3">
-                  <span className="font-semibold lowercase text-accent">abhishek</span> · made with{' '}
+                  <span className="font-semibold lowercase text-accent">abhishek</span> • made with{' '}
                   <Heart className="inline size-3.5 align-[-2px] fill-accent text-accent" />
                 </p>
               </div>
