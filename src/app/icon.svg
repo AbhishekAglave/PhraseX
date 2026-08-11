@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="PhraseX">
+  <defs>
+    <linearGradient id="px-badge" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f4bef4" />
+      <stop offset="0.52" stop-color="#bc51d6" />
+      <stop offset="1" stop-color="#8c34b2" />
+    </linearGradient>
+    <linearGradient id="px-sheen" x1="10" y1="6" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.4" />
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <rect x="2" y="2" width="60" height="60" rx="18" fill="url(#px-badge)" />
+  <rect x="2" y="2" width="60" height="60" rx="18" fill="url(#px-sheen)" />
+
+  <!--
+    The letter X, matching the wordmark: two filled diagonals with flat
+    horizontal terminals. Round-capped strokes read as a multiplication
+    sign instead of a letter.
+  -->
+  <g fill="#ffffff">
+    <path d="M17 19 L26 19 L43 45 L34 45 Z" />
+    <path d="M43 19 L34 19 L17 45 L26 45 Z" />
+  </g>
+
+  <!-- sparkle: the "rewritten into something better" half of the story -->
+  <path
+    d="M49 8c.5 3.78 2.22 5.5 6 6-3.78.5-5.5 2.22-6 6-.5-3.78-2.22-5.5-6-6 3.78-.5 5.5-2.22 6-6Z"
+    fill="#ffffff"
+  />
+</svg>

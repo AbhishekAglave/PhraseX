@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PhraseX — Design Reference</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ============================================================
+         TOKENS — mirrors src/app/globals.css exactly.
+         Change a value here only to preview; the app reads its own.
+         ============================================================ */
+      :root {
+        --canvas: #edebeb;
+
+        --glass: rgba(255, 255, 255, 0.34);
+        --glass-strong: rgba(255, 255, 255, 0.5);
+        --glass-soft: rgba(255, 255, 255, 0.18);
+        --glass-line: rgba(255, 255, 255, 0.55);
+        --glass-line-soft: rgba(255, 255, 255, 0.32);
+
+        --ink: #1f2124;
+        --ink-2: #4a4e55;
+        --ink-3: #767b84;
+
+        --accent: #bc51d6;
+        --accent-2: #ec80ef;
+        --accent-soft: rgba(188, 81, 214, 0.12);
+        --accent-shadow: rgba(188, 81, 214, 0.34);
+
+        --good: #2f9e6b;
+        --good-soft: rgba(47, 158, 107, 0.12);
+        --bad: #d8503f;
+        --bad-soft: rgba(216, 80, 63, 0.12);
+
+        --shadow-card: 0 8px 30px rgba(31, 33, 36, 0.07);
+        --shadow-lift: 0 16px 44px rgba(31, 33, 36, 0.1);
+
+        --font-sans: 'Inter', 'Avenir Next', 'Segoe UI', sans-serif;
+        --font-display: 'Outfit', 'Inter', sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; padding: 34px 22px 100px; min-height: 100vh; position: relative;
+        background: var(--canvas); color: var(--ink); font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ---------- the aurora, frozen at rest ---------- */
+      .aurora { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+      .aurora span { position: absolute; border-radius: 50%; }
+      .b-peach    { left: -18vw; bottom: -28vh; width: 80vw; height: 74vh; filter: blur(72px);
+        background: radial-gradient(circle, rgba(247,164,110,.95), rgba(247,164,110,0) 68%); }
+      .b-lavender { right: -22vw; bottom: -32vh; width: 84vw; height: 80vh; filter: blur(72px);
+        background: radial-gradient(circle, rgba(188,148,226,.92), rgba(188,148,226,0) 68%); }
+      .b-rose     { left: 20vw; bottom: -36vh; width: 64vw; height: 68vh; filter: blur(72px);
+        background: radial-gradient(circle, rgba(240,152,176,.72), rgba(240,152,176,0) 66%); }
+      .b-mint     { opacity: .7; left: 4vw; top: -32vh; width: 62vw; height: 62vh; filter: blur(82px);
+        background: radial-gradient(circle, rgba(154,214,198,.55), rgba(154,214,198,0) 68%); }
+      .b-sky      { opacity: .7; right: -12vw; top: -30vh; width: 58vw; height: 58vh; filter: blur(82px);
+        background: radial-gradient(circle, rgba(150,186,236,.5), rgba(150,186,236,0) 68%); }
+      .b-azure    { opacity: .7; left: 30vw; top: 16vh; width: 48vw; height: 50vh; filter: blur(90px);
+        background: radial-gradient(circle, rgba(122,148,240,.5), rgba(122,148,240,0) 66%); }
+
+      .wrap { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; }
+
+      /* ---------- page furniture ---------- */
+      h1 { font-family: var(--font-display); font-size: 30px; font-weight: 700; letter-spacing: -.03em; margin: 0 0 6px; }
+      .lede { color: var(--ink-2); font-size: 14.5px; line-height: 1.7; margin: 0 0 12px; max-width: 74ch; }
+      .toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 36px; }
+      .toc a {
+        text-decoration: none; color: var(--ink-2); font-size: 12px; font-weight: 600;
+        border: 1px solid var(--glass-line-soft); background: var(--glass);
+        backdrop-filter: blur(18px); padding: 6px 12px; border-radius: 999px;
+      }
+      .toc a:hover { color: var(--accent); border-color: rgba(188,81,214,.35); }
+
+      section { margin-bottom: 34px; }
+      .sec-title {
+        display: flex; align-items: baseline; gap: 12px; margin: 0 0 14px;
+        font-size: 11px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-3);
+      }
+      .sec-title::after { content: ''; flex: 1; height: 1px; background: var(--glass-line); }
+      .note { font-size: 12.5px; line-height: 1.65; color: var(--ink-3); margin: 10px 0 0; }
+      code {
+        font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 12px;
+        background: rgba(255,255,255,.5); padding: 2px 6px; border-radius: 5px; color: var(--ink-2);
+      }
+
+      /* ============================================================
+         APP COMPONENTS — class names map 1:1 to the Tailwind classes
+         used in src/components/*.tsx
+         ============================================================ */
+      .card {
+        border: 1px solid var(--glass-line); background: var(--glass);
+        border-radius: 28px; box-shadow: var(--shadow-card); backdrop-filter: blur(40px);
+      }
+      .card--lift { background: var(--glass-strong); border-color: rgba(255,255,255,.55); box-shadow: var(--shadow-lift); }
+      .card-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 24px 16px; }
+      .kicker { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-3); }
+      .subtitle { margin: 6px 0 0; font-family: var(--font-display); font-size: 18px; font-weight: 600; letter-spacing: -.015em; }
+      .card-body { padding: 0 24px 24px; }
+
+      .chip {
+        display: inline-flex; align-items: center; gap: 6px;
+        border: 1px solid var(--glass-line-soft); background: var(--glass-soft);
+        border-radius: 999px; padding: 6px 12px; font-size: 11px; font-weight: 600; color: var(--ink-2);
+      }
+
+      /* buttons: the three states of actionButtonClass() */
+      .btn {
+        display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-family: inherit;
+        border: 0; border-radius: 999px; padding: 8px 16px; font-size: 12px; font-weight: 600; transition: 140ms ease;
+      }
+      .btn--idle { background: linear-gradient(to bottom right, var(--accent-2), var(--accent)); color: #fff; box-shadow: 0 8px 20px rgba(188,81,214,.28); }
+      .btn--idle:hover { box-shadow: 0 12px 26px rgba(188,81,214,.36); }
+      .btn--busy { background: var(--accent-soft); color: var(--accent); cursor: not-allowed; }
+      .btn--muted { border: 1px solid var(--glass-line-soft); background: rgba(255,255,255,.38); color: var(--ink-2); }
+      .btn--muted:hover { border-color: rgba(188,81,214,.35); color: var(--accent); }
+      .btn--copy { border: 1px solid var(--glass-line-soft); background: rgba(255,255,255,.38); color: var(--ink-2); backdrop-filter: blur(18px); }
+      .btn--icon { padding: 8px 10px; }
+      .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
+      /* input */
+      textarea.ta {
+        width: 100%; min-height: 150px; resize: vertical; display: block;
+        border: 1px solid var(--glass-line-soft); background: rgba(255,255,255,.26);
+        border-radius: 24px; padding: 16px 20px;
+        font-family: var(--font-sans); font-size: 20px; font-weight: 700; line-height: 1.62;
+        letter-spacing: -.014em; color: var(--ink); caret-color: var(--accent);
+        text-shadow: 0 1px 2px var(--accent-shadow);
+        box-shadow: inset 0 1px 2px rgba(255,255,255,.6); outline: none; transition: 140ms ease;
+      }
+      textarea.ta::placeholder { font-weight: 400; color: var(--ink-3); text-shadow: none; }
+      textarea.ta:focus { border-color: rgba(188,81,214,.45); background: rgba(255,255,255,.42); box-shadow: 0 0 0 4px var(--accent-soft); }
+
+      /* output type */
+      .text-soft { text-shadow: 0 1px 2px var(--accent-shadow); }
+      .rewrite {
+        margin: 16px 0 0; font-family: var(--font-display); font-size: 28px; font-weight: 600;
+        line-height: 1.4; letter-spacing: -.025em;
+        background: linear-gradient(to bottom right, var(--accent-2), var(--accent));
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+        filter: drop-shadow(0 1px 2px rgba(188,81,214,.4));
+      }
+      .label-accent { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--accent); }
+      .body-out { margin: 8px 0 0; font-size: 15px; font-weight: 500; line-height: 1.6; color: var(--ink-2); }
+      .subpanel { margin-top: 20px; border: 1px solid var(--glass-line-soft); background: rgba(255,255,255,.26); border-radius: 24px; padding: 16px 20px; }
+      .pill-good { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; background: var(--good-soft); color: var(--good); padding: 6px 12px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+
+      /* grammar diff */
+      .issue { margin-top: 12px; border: 1px solid var(--glass-line-soft); background: rgba(255,255,255,.26); border-radius: 24px; overflow: hidden; }
+      .issue-head { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,.38); font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-3); }
+      .issue-head b { color: var(--ink); }
+      .diff { display: grid; }
+      @media (min-width: 620px) { .diff { grid-template-columns: 1fr 1fr; } }
+      .diff > div { padding: 16px 20px; }
+      .diff > div + div { border-top: 1px solid rgba(255,255,255,.38); }
+      @media (min-width: 620px) { .diff > div + div { border-top: 0; border-left: 1px solid rgba(255,255,255,.38); } }
+      .k { margin: 0; font-size: 10px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
+      .k--bad { color: var(--bad); } .k--good { color: var(--good); }
+      .v { margin: 8px 0 0; font-size: 15px; font-weight: 600; line-height: 1.4; text-shadow: 0 1px 2px var(--accent-shadow); }
+      .v--bad { color: var(--bad); text-decoration: line-through; text-decoration-color: rgba(216,80,63,.4); }
+      .v--good { color: var(--good); }
+      .why { margin: 0; padding: 16px 20px; border-top: 1px solid rgba(255,255,255,.38); background: rgba(255,255,255,.18); font-size: 14px; line-height: 1.6; font-weight: 500; color: var(--ink-2); text-shadow: 0 1px 2px var(--accent-shadow); }
+
+      /* tone cards */
+      .tones { display: grid; gap: 16px; }
+      @media (min-width: 640px) { .tones { grid-template-columns: 1fr 1fr; } }
+      .tone { display: flex; flex-direction: column; border: 1px solid var(--glass-line-soft); background: rgba(255,255,255,.18); border-radius: 24px; padding: 16px 20px; }
+      .tone--filled { border-color: rgba(255,255,255,.55); background: rgba(255,255,255,.45); box-shadow: var(--shadow-card); }
+      .tone-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .tone-name { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); }
+      .tone-text { margin: 12px 0 0; flex: 1; font-size: 15px; font-weight: 600; line-height: 1.6; letter-spacing: -.01em; color: var(--ink); text-shadow: 0 1px 2px var(--accent-shadow); }
+      .tone-empty { margin: 12px 0 0; flex: 1; font-size: 14px; font-weight: 500; line-height: 1.65; color: var(--ink-3); }
+      .tone .btn { margin-top: 16px; align-self: flex-start; }
+
+      /* misc */
+      .placeholder { border: 1px dashed rgba(255,255,255,.45); background: rgba(255,255,255,.12); border-radius: 24px; padding: 40px 24px; text-align: center; font-size: 14px; font-weight: 500; color: var(--ink-3); }
+      .banner { display: flex; align-items: flex-start; gap: 12px; border: 1px solid rgba(255,255,255,.45); background: var(--bad-soft); border-radius: 28px; padding: 16px 20px; font-size: 14px; font-weight: 600; color: var(--bad); backdrop-filter: blur(40px); }
+      .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--glass-line); background: var(--glass-strong); border-radius: 999px; padding: 10px 20px 10px 16px; box-shadow: var(--shadow-card); backdrop-filter: blur(40px); }
+      .brand { display: flex; align-items: center; gap: 12px; }
+      .brand p { margin: 0; font-family: var(--font-display); font-size: 19px; font-weight: 600; letter-spacing: -.02em; line-height: 1; }
+      .credit { margin: 20px 0 0; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.38); text-align: center; font-size: 12px; font-weight: 500; color: var(--ink-3); }
+      .credit .name { font-weight: 600; color: var(--accent); text-transform: lowercase; }
+      .heart { display: inline-block; vertical-align: -2px; }
+
+      /* ---------- colour + type specimens ---------- */
+      .swatches { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+      .sw { border: 1px solid var(--glass-line-soft); background: var(--glass); border-radius: 18px; overflow: hidden; backdrop-filter: blur(18px); }
+      .sw .fill { height: 62px; border-bottom: 1px solid var(--glass-line-soft); background-image:
+        linear-gradient(45deg, rgba(0,0,0,.05) 25%, transparent 25%, transparent 75%, rgba(0,0,0,.05) 75%),
+        linear-gradient(45deg, rgba(0,0,0,.05) 25%, transparent 25%, transparent 75%, rgba(0,0,0,.05) 75%);
+        background-size: 14px 14px; background-position: 0 0, 7px 7px; }
+      .sw .fill i { display: block; height: 100%; }
+      .sw .meta { padding: 10px 12px; }
+      .sw .nm { display: block; font-size: 12px; font-weight: 600; }
+      .sw .val { display: block; margin-top: 3px; font-family: ui-monospace, Menlo, monospace; font-size: 10.5px; color: var(--ink-3); }
+      .type-row { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid var(--glass-line-soft); }
+      .type-row .tag { flex: none; width: 190px; font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--ink-3); }
+      .logo-row { display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+      .logo-row figure { margin: 0; text-align: center; }
+      .logo-row figcaption { margin-top: 6px; font-size: 10px; color: var(--ink-3); }
+      .grid-2 { display: grid; gap: 16px; }
+      @media (min-width: 900px) { .grid-2 { grid-template-columns: 1fr 1fr; align-items: start; } }
+    </style>
+  </head>
+  <body>
+    <!-- aurora, shown in its resting state -->
+    <div class="aurora">
+      <span class="b-mint"></span><span class="b-sky"></span><span class="b-azure"></span>
+      <span class="b-peach"></span><span class="b-rose"></span><span class="b-lavender"></span>
+    </div>
+
+    <!-- reusable logo symbol -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <linearGradient id="px-badge" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#f4bef4" /><stop offset=".52" stop-color="#bc51d6" /><stop offset="1" stop-color="#8c34b2" />
+        </linearGradient>
+        <linearGradient id="px-sheen" x1="10" y1="6" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#fff" stop-opacity=".4" /><stop offset="1" stop-color="#fff" stop-opacity="0" />
+        </linearGradient>
+        <symbol id="px-logo" viewBox="0 0 64 64">
+          <rect x="2" y="2" width="60" height="60" rx="18" fill="url(#px-badge)" />
+          <rect x="2" y="2" width="60" height="60" rx="18" fill="url(#px-sheen)" />
+          <g fill="#fff">
+            <path d="M17 19 L26 19 L43 45 L34 45 Z" />
+            <path d="M43 19 L34 19 L17 45 L26 45 Z" />
+          </g>
+          <path d="M49 8c.5 3.78 2.22 5.5 6 6-3.78.5-5.5 2.22-6 6-.5-3.78-2.22-5.5-6-6 3.78-.5 5.5-2.22 6-6Z" fill="#fff" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <div class="wrap">
+      <h1>PhraseX — design reference</h1>
+      <p class="lede">
+        Every colour token, type style and component the app uses, on the real aurora background.
+        Values mirror <code>src/app/globals.css</code> and the Tailwind classes in
+        <code>src/components/*.tsx</code> — this page is documentation, the app never imports it.
+      </p>
+      <nav class="toc">
+        <a href="#colour">Colour</a><a href="#type">Type</a><a href="#logo">Logo</a>
+        <a href="#bars">Top bar</a><a href="#buttons">Buttons</a><a href="#chips">Chips</a>
+        <a href="#input">Input</a><a href="#rewrite">Rewrite</a><a href="#grammar">Grammar</a>
+        <a href="#tones">Tones</a><a href="#states">States</a><a href="#footer">Footer</a>
+      </nav>
+
+      <!-- ============ COLOUR ============ -->
+      <section id="colour">
+        <p class="sec-title">Colour tokens</p>
+        <div class="swatches">
+          <div class="sw"><div class="fill"><i style="background:var(--canvas)"></i></div><div class="meta"><span class="nm">canvas</span><span class="val">#edebeb</span></div></div>
+          <div class="sw"><div class="fill"><i style="background:var(--accent)"></i></div><div class="meta"><span class="nm">accent</span><span class="val">#bc51d6</span></div></div>
+          <div class="sw"><div class="fill"><i style="background:var(--accent-2)"></i></div><div class="meta"><span class="nm">accent-2</span><span class="val">#ec80ef</span></div></div>
+          <div class="sw"><div class="fill"><i style="background:linear-gradient(to bottom right,var(--accent-2),var(--accent))"></i></div><div class="meta"><span class="nm">button gradient</span><span class="val">accent-2 → accent</span></div></div>
+          <div class="sw"><div class="fill"><i style="background:var(--accent-soft)"></i></div><div class="meta"><span class="nm">accent-soft</span><span class="val">rgba(188,81,214,.12)</span></div></div>
+          <div class="sw"><div class="fill"><i style="background:var(--accent-shadow)"></i></div><div class="meta"><span class="nm">accent-shadow</span><span class="val">rgba(188,81,214,.34)</span></div></div>
+          <div class="sw"><div class="fill"><i style="background:var(--ink)"></i></div><div class="meta"><span class="nm">ink</span><span class="val">#1f2124</span></div></div>
+          <div class="sw"><div class="fill"><i style="background:var(--ink-2)"></i></div><div class="meta"><span class="nm">ink-2</span><span class="val">#4a4e55</span></div></div>
+          <div class="sw"><div class="fill"><i style="background:var(--ink-3)"></i></div><div class="meta"><span class="nm">ink-3</span><span class="val">#767b84</span></div></div>
+          <div class="sw"><div class="fill"><i style="background:var(--good)"></i></div><div class="meta"><span class="nm">good</span><span class="val">#2f9e6b</span></div></div>
+          <div class="sw"><div class="fill"><i style="background:var(--bad)"></i></div><div class="meta"><span class="nm">bad</span><span class="val">#d8503f</span></div></div>
+          <div class="sw"><div class="fill"><i style="background:var(--glass)"></i></div><div class="meta"><span class="nm">glass</span><span class="val">rgba(255,255,255,.34)</span></div></div>
+          <div class="sw"><div class="fill"><i style="background:var(--glass-strong)"></i></div><div class="meta"><span class="nm">glass-strong</span><span class="val">rgba(255,255,255,.5)</span></div></div>
+          <div class="sw"><div class="fill"><i style="background:var(--glass-soft)"></i></div><div class="meta"><span class="nm">glass-soft</span><span class="val">rgba(255,255,255,.18)</span></div></div>
+          <div class="sw"><div class="fill"><i style="background:var(--glass-line)"></i></div><div class="meta"><span class="nm">glass-line</span><span class="val">rgba(255,255,255,.55)</span></div></div>
+          <div class="sw"><div class="fill"><i style="background:var(--glass-line-soft)"></i></div><div class="meta"><span class="nm">glass-line-soft</span><span class="val">rgba(255,255,255,.32)</span></div></div>
+        </div>
+        <p class="note">
+          Checkerboard shows through the translucent tokens. Aurora blobs (fixed, behind everything):
+          peach <code>247,164,110</code> · rose <code>240,152,176</code> · lavender
+          <code>188,148,226</code> · mint <code>154,214,198</code> · sky <code>150,186,236</code> ·
+          azure <code>122,148,240</code>. Shadows: <code>--shadow-card</code> 0 8px 30px /.07,
+          <code>--shadow-lift</code> 0 16px 44px /.10.
+        </p>
+      </section>
+
+      <!-- ============ TYPE ============ -->
+      <section id="type">
+        <p class="sec-title">Typography</p>
+        <div class="card"><div class="card-body" style="padding-top: 20px">
+          <div class="type-row"><span class="tag">display / 28 / 600</span><span style="font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-.025em">Primary rewrite headline</span></div>
+          <div class="type-row"><span class="tag">display / 18 / 600</span><span class="subtitle">Card subtitle</span></div>
+          <div class="type-row"><span class="tag">sans / 20 / 700</span><span style="font-size:20px;font-weight:700;letter-spacing:-.014em">Textarea input</span></div>
+          <div class="type-row"><span class="tag">sans / 15 / 600</span><span style="font-size:15px;font-weight:600">Tone variant output</span></div>
+          <div class="type-row"><span class="tag">sans / 15 / 500</span><span class="body-out" style="margin:0">Explanations and summaries</span></div>
+          <div class="type-row"><span class="tag">sans / 11 / 600 / .2em</span><span class="kicker">Section kicker</span></div>
+          <div class="type-row" style="border:0"><span class="tag">sans / 12 / 600</span><span style="font-size:12px;font-weight:600;color:var(--ink-2)">Buttons, chips, meta</span></div>
+          <p class="note"><strong>Outfit</strong> for display and headlines, <strong>Inter</strong> for everything else.</p>
+        </div></div>
+      </section>
+
+      <!-- ============ LOGO ============ -->
+      <section id="logo">
+        <p class="sec-title">Logo</p>
+        <div class="card"><div class="card-body" style="padding-top: 20px">
+          <div class="logo-row">
+            <figure><svg width="96" height="96"><use href="#px-logo" /></svg><figcaption>96</figcaption></figure>
+            <figure><svg width="64" height="64"><use href="#px-logo" /></svg><figcaption>64</figcaption></figure>
+            <figure><svg width="36" height="36"><use href="#px-logo" /></svg><figcaption>36 · navbar</figcaption></figure>
+            <figure><svg width="32" height="32"><use href="#px-logo" /></svg><figcaption>32</figcaption></figure>
+            <figure><svg width="16" height="16"><use href="#px-logo" /></svg><figcaption>16 · favicon</figcaption></figure>
+          </div>
+          <p class="note">
+            Badge gradient <code>#f4bef4 → #bc51d6 → #8c34b2</code>. The X is two filled diagonals
+            with flat terminals (matching the wordmark), not round-capped strokes. Source of truth:
+            <code>src/app/icon.svg</code> and <code>src/components/phrasex-logo.tsx</code>.
+          </p>
+        </div></div>
+      </section>
+
+      <!-- ============ TOP BAR ============ -->
+      <section id="bars">
+        <p class="sec-title">Top bar</p>
+        <div class="topbar">
+          <div class="brand">
+            <svg width="36" height="36" style="filter: drop-shadow(0 6px 16px rgba(188,81,214,.32))"><use href="#px-logo" /></svg>
+            <p>PhraseX</p>
+          </div>
+          <span class="chip" style="border-color: var(--glass-line-soft); background: rgba(255,255,255,.34)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+            Ready
+          </span>
+        </div>
+        <div class="topbar" style="margin-top: 12px">
+          <div class="brand">
+            <svg width="36" height="36" style="filter: drop-shadow(0 6px 16px rgba(188,81,214,.32))"><use href="#px-logo" /></svg>
+            <p>PhraseX</p>
+          </div>
+          <span class="chip" style="border: 0; background: var(--accent-soft); color: var(--accent)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            Working
+          </span>
+        </div>
+        <p class="note">Single row, sticky at <code>top-4</code>. The chip flips to “Working” while any request is in flight — the same flag that drives the aurora.</p>
+      </section>
+
+      <!-- ============ BUTTONS ============ -->
+      <section id="buttons">
+        <p class="sec-title">Buttons</p>
+        <div class="card"><div class="card-body" style="padding-top: 20px">
+          <div class="row">
+            <button class="btn btn--idle">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+              Analyze text
+            </button>
+            <button class="btn btn--busy">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+              Analyzing
+            </button>
+            <button class="btn btn--busy">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+              Rewriting
+            </button>
+            <button class="btn btn--muted">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22M18 2l4 4-4 4M2 6h1.972a4 4 0 0 1 3.6 2.2M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></svg>
+              Try sample
+            </button>
+            <button class="btn btn--copy">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M16 4a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2"/></svg>
+              Copy
+            </button>
+            <button class="btn btn--copy btn--icon" title="Copy" aria-label="Copy">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M16 4a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2"/></svg>
+            </button>
+          </div>
+          <p class="note">
+            One helper, <code>actionButtonClass(state)</code>, drives all of them —
+            <code>idle</code> (accent gradient), <code>busy</code> (accent-soft), <code>muted</code>
+            (glass). Copy has a labelled and an icon-only variant; icon-only carries an
+            <code>aria-label</code>.
+          </p>
+        </div></div>
+      </section>
+
+      <!-- ============ CHIPS ============ -->
+      <section id="chips">
+        <p class="sec-title">Chips</p>
+        <div class="card"><div class="card-body" style="padding-top: 20px">
+          <div class="row">
+            <span class="chip">English · Hindi · Hinglish</span>
+            <span class="chip" style="font-variant-numeric: tabular-nums">69 / 1500</span>
+            <span class="chip">2 issues</span>
+            <span class="chip">1 / 4 generated</span>
+            <span class="pill-good">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></svg>
+              Detected input: Hinglish
+            </span>
+          </div>
+        </div></div>
+      </section>
+
+      <div class="grid-2">
+        <!-- ============ INPUT ============ -->
+        <section id="input" style="margin-bottom: 0">
+          <p class="sec-title">Input card</p>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <p class="kicker">Input</p>
+                <p class="subtitle">Your text</p>
+              </div>
+              <div class="row" style="gap: 8px">
+                <span class="chip">English · Hindi · Hinglish</span>
+                <span class="chip" style="font-variant-numeric: tabular-nums">69 / 1500</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <textarea class="ta" spellcheck="false">i didn't went there because nobody were telling me the proper address</textarea>
+              <div class="row" style="justify-content: space-between; margin-top: 16px">
+                <span style="font-size: 12px; font-weight: 500; color: var(--ink-3)">69 / 1500 characters</span>
+                <div class="row" style="gap: 8px">
+                  <button class="btn btn--muted">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22M18 2l4 4-4 4M2 6h1.972a4 4 0 0 1 3.6 2.2M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></svg>
+                    Try sample
+                  </button>
+                  <button class="btn btn--idle">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+                    Analyze text
+                  </button>
+                </div>
+              </div>
+              <p class="note">Textarea: 20px/700, accent caret, pink-lavender glow, crisp placeholder. Click in to see the focus ring.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ REWRITE ============ -->
+        <section id="rewrite" style="margin-bottom: 0">
+          <p class="sec-title">Primary rewrite</p>
+          <div class="card card--lift">
+            <div class="card-head">
+              <div>
+                <p class="kicker">Primary rewrite</p>
+                <p class="subtitle">Same meaning, cleaner English</p>
+              </div>
+              <button class="btn btn--copy">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M16 4a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2"/></svg>
+                Copy
+              </button>
+            </div>
+            <div class="card-body">
+              <span class="pill-good">◆ Detected input: English</span>
+              <p class="rewrite">I didn't go there because nobody was giving me the proper address.</p>
+              <div class="subpanel">
+                <p class="label-accent">Improved tone</p>
+                <p class="body-out text-soft">I didn't go there because no one was providing me with the correct address.</p>
+              </div>
+              <p class="note">Headline is the button gradient via <code>bg-clip-text</code> plus a <code>drop-shadow</code> — a text-shadow would smear a clipped fill.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ============ GRAMMAR ============ -->
+      <section id="grammar" style="margin-top: 34px">
+        <p class="sec-title">Grammar notes</p>
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <p class="kicker">Grammar notes</p>
+              <p class="subtitle">What was wrong, and why</p>
+            </div>
+            <span class="chip">2 issues</span>
+          </div>
+          <div class="card-body">
+            <div class="subpanel" style="margin-top: 0; background: var(--accent-soft)">
+              <p class="label-accent">Summary</p>
+              <p class="body-out text-soft">The original text contained incorrect verb forms and subject-verb agreement issues.</p>
+            </div>
+            <article class="issue">
+              <div class="issue-head">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72M14 7l3 3M5 6v4M19 14v4M10 2v2M7 8H3M17 16h-4M21 2v2"/></svg>
+                <b>Issue 01</b>
+              </div>
+              <div class="diff">
+                <div><p class="k k--bad">Original</p><p class="v v--bad">didn't went</p></div>
+                <div><p class="k k--good">Correction</p><p class="v v--good">didn't go</p></div>
+              </div>
+              <p class="why">The auxiliary verb 'did' requires the base form of the verb, which is 'go'.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ TONES ============ -->
+      <section id="tones">
+        <p class="sec-title">Tone variants</p>
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <p class="kicker">Tone variants</p>
+              <p class="subtitle">Generate only the tone you need</p>
+            </div>
+            <span class="chip">1 / 4 generated</span>
+          </div>
+          <div class="card-body">
+            <div class="tones">
+              <article class="tone tone--filled">
+                <div class="tone-top">
+                  <p class="tone-name">Casual</p>
+                  <button class="btn btn--copy btn--icon" title="Copy" aria-label="Copy">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M16 4a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2"/></svg>
+                  </button>
+                </div>
+                <p class="tone-text">I didn't go because no one gave me the right address.</p>
+                <button class="btn btn--muted">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+                  Regenerate
+                </button>
+              </article>
+              <article class="tone">
+                <div class="tone-top"><p class="tone-name">Friendly</p></div>
+                <p class="tone-empty">Not generated yet — create it only when you need it.</p>
+                <button class="btn btn--idle">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+                  Generate
+                </button>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ STATES ============ -->
+      <section id="states">
+        <p class="sec-title">Empty + error states</p>
+        <div class="grid-2">
+          <div class="placeholder">Your rewritten English sentence will appear here.</div>
+          <div class="banner">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            <p style="margin: 0">Something went wrong.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ FOOTER ============ -->
+      <section id="footer">
+        <p class="sec-title">Footer</p>
+        <div class="card"><div class="card-body" style="padding-top: 20px">
+          <p class="kicker">What PhraseX does</p>
+          <div class="row" style="margin-top: 12px">
+            <span class="chip">Detects English, Hindi or Hinglish</span>
+            <span class="chip">Rewrites without changing your meaning</span>
+            <span class="chip">Explains every grammar fix</span>
+            <span class="chip">Original vs correction, side by side</span>
+            <span class="chip">Four tones, generated only on demand</span>
+            <span class="chip">One-click copy on every output</span>
+          </div>
+          <p class="credit">
+            <span class="name">abhishek</span> · made with
+            <svg class="heart" width="14" height="14" viewBox="0 0 24 24" fill="var(--accent)" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 0L5 15c-1.5-1.5-3-3.2-3-5.5"/></svg>
+          </p>
+        </div></div>
+      </section>
+    </div>
+  </body>
+</html>

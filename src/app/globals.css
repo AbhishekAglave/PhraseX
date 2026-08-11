@@ -1,21 +1,65 @@
 @import 'tailwindcss';
 
+/*
+  Theme: Soft Glass
+  Light grey canvas with pastel aurora blobs, frosted translucent
+  cards, pinkish-lavender accent.
+*/
 :root {
-  --background: #020617;
-  --foreground: #e2e8f0;
-  --surface: rgba(15, 23, 42, 0.74);
-  --border: rgba(148, 163, 184, 0.16);
-  --font-sans: 'Space Grotesk', 'Avenir Next', 'Segoe UI', sans-serif;
-  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', monospace;
+  --canvas: #edebeb;
+
+  --glass: rgba(255, 255, 255, 0.34);
+  --glass-strong: rgba(255, 255, 255, 0.5);
+  --glass-soft: rgba(255, 255, 255, 0.18);
+  --glass-line: rgba(255, 255, 255, 0.55);
+  --glass-line-soft: rgba(255, 255, 255, 0.32);
+
+  --ink: #1f2124;
+  --ink-2: #4a4e55;
+  --ink-3: #767b84;
+
+  --accent: #bc51d6;
+  --accent-2: #ec80ef;
+  --accent-soft: rgba(188, 81, 214, 0.12);
+  /* soft glow under generated text */
+  --accent-shadow: rgba(188, 81, 214, 0.34);
+
+  --good: #2f9e6b;
+  --good-soft: rgba(47, 158, 107, 0.12);
+  --bad: #d8503f;
+  --bad-soft: rgba(216, 80, 63, 0.12);
+
+  --shadow-card: 0 8px 30px rgba(31, 33, 36, 0.07);
+  --shadow-lift: 0 16px 44px rgba(31, 33, 36, 0.1);
+
+  --font-sans: 'Inter', 'Avenir Next', 'Segoe UI', sans-serif;
+  --font-display: 'Outfit', 'Inter', 'Avenir Next', sans-serif;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-surface: var(--surface);
-  --color-border: var(--border);
+  --color-canvas: var(--canvas);
+
+  --color-glass: var(--glass);
+  --color-glass-strong: var(--glass-strong);
+  --color-glass-soft: var(--glass-soft);
+  --color-glass-line: var(--glass-line);
+  --color-glass-line-soft: var(--glass-line-soft);
+
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
 }
 
 * {
@@ -28,57 +72,145 @@ html {
 
 body {
   min-width: 320px;
-  background: var(--background);
-  background-repeat: no-repeat;
-  color: var(--foreground);
+  background: var(--canvas);
+  color: var(--ink);
   font-family: var(--font-sans);
 }
 
-body::before {
-  content: '';
-  position: fixed;
-  inset: -20vh -10vw;
-  z-index: -1;
-  background-image:
-    radial-gradient(circle at top, rgba(34, 211, 238, 0.1), transparent 34%),
-    linear-gradient(
-      135deg,
-      transparent 0%,
-      transparent 42%,
-      rgba(148, 163, 184, 0.035) 42.4%,
-      rgba(148, 163, 184, 0.035) 42.8%,
-      transparent 43.2%,
-      transparent 100%
-    ),
-    linear-gradient(
-      45deg,
-      transparent 0%,
-      transparent 48%,
-      rgba(148, 163, 184, 0.028) 48.3%,
-      rgba(148, 163, 184, 0.028) 48.7%,
-      transparent 49%,
-      transparent 100%
-    );
-
-  background-size:
-    100% 100%,
-    140% 140%,
-    140% 140%;
-  background-position:
-    center top,
-    center center,
-    center center;
-  mask-image: radial-gradient(circle at center, black 52%, transparent 100%);
-  opacity: 0.9;
-  pointer-events: none;
-}
-
-button,
-textarea {
+button {
   font: inherit;
 }
 
+/*
+  Only the family is inherited here. The `font` shorthand would also set
+  size and weight, and because this file's rules sit outside `@layer` they
+  outrank Tailwind's utilities — so `text-xl` / `font-bold` on the textarea
+  would be silently ignored.
+*/
+textarea {
+  font-family: inherit;
+}
+
+/*
+  A very light lift applied to every model-generated string, so the output
+  reads as raised off the translucent glass rather than printed flat on it.
+  The gradient rewrite headline uses `drop-shadow-*` instead — a text-shadow
+  paints over a `bg-clip-text` fill and muddies the glyphs.
+*/
+.text-soft {
+  text-shadow: 0 1px 2px var(--accent-shadow);
+}
+
 ::selection {
-  background: rgba(34, 211, 238, 0.28);
-  color: white;
+  background: rgba(188, 81, 214, 0.2);
+  color: var(--ink);
+}
+
+/* ------------------------------------------------------------------
+   Aurora background.
+
+   Every blob is positioned in CSS but *moved* from JS (see
+   aurora-background.tsx): a requestAnimationFrame loop races each blob
+   along a random heading and floods the layer with hue/saturation while
+   a request is in flight. When the response lands the loop stops
+   writing, so every blob freezes where it got to while the colour boost
+   drains back to the resting palette.
+   ------------------------------------------------------------------ */
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--canvas);
+  filter: hue-rotate(var(--aurora-hue, 0deg)) saturate(var(--aurora-saturate, 1))
+    brightness(var(--aurora-brightness, 1)) contrast(var(--aurora-contrast, 1));
+}
+
+.aurora__blob {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+}
+
+/* bottom band — the resting look */
+.aurora__blob--peach {
+  left: -18vw;
+  bottom: -28vh;
+  width: 80vw;
+  height: 74vh;
+  filter: blur(72px);
+  background: radial-gradient(circle at center, rgba(247, 164, 110, 0.95), rgba(247, 164, 110, 0) 68%);
+}
+
+.aurora__blob--lavender {
+  right: -22vw;
+  bottom: -32vh;
+  width: 84vw;
+  height: 80vh;
+  filter: blur(72px);
+  background: radial-gradient(circle at center, rgba(188, 148, 226, 0.92), rgba(188, 148, 226, 0) 68%);
+}
+
+.aurora__blob--rose {
+  left: 20vw;
+  bottom: -36vh;
+  width: 64vw;
+  height: 68vh;
+  filter: blur(72px);
+  background: radial-gradient(circle at center, rgba(240, 152, 176, 0.72), rgba(240, 152, 176, 0) 66%);
+}
+
+/* upper band — faint at rest, lifts while the magic runs */
+.aurora__blob--mint {
+  opacity: 0.7;
+  left: 4vw;
+  top: -32vh;
+  width: 62vw;
+  height: 62vh;
+  filter: blur(82px);
+  background: radial-gradient(circle at center, rgba(154, 214, 198, 0.55), rgba(154, 214, 198, 0) 68%);
+}
+
+.aurora__blob--sky {
+  opacity: 0.7;
+  right: -12vw;
+  top: -30vh;
+  width: 58vw;
+  height: 58vh;
+  filter: blur(82px);
+  background: radial-gradient(circle at center, rgba(150, 186, 236, 0.5), rgba(150, 186, 236, 0) 68%);
+}
+
+.aurora__blob--azure {
+  opacity: 0.7;
+  left: 30vw;
+  top: 16vh;
+  width: 48vw;
+  height: 50vh;
+  filter: blur(90px);
+  background: radial-gradient(circle at center, rgba(122, 148, 240, 0.5), rgba(122, 148, 240, 0) 66%);
+}
+
+/* wide sheen that sweeps across everything while busy */
+.aurora__veil {
+  position: absolute;
+  top: -60vh;
+  left: -60vw;
+  width: 220vw;
+  height: 220vh;
+  opacity: 0;
+  will-change: transform, opacity;
+  background: conic-gradient(
+    from 0deg,
+    rgba(255, 255, 255, 0) 0deg,
+    rgba(255, 255, 255, 0.5) 42deg,
+    rgba(180, 196, 248, 0.34) 96deg,
+    rgba(255, 255, 255, 0) 168deg,
+    rgba(206, 178, 240, 0.32) 250deg,
+    rgba(255, 255, 255, 0) 320deg,
+    rgba(255, 255, 255, 0) 360deg
+  );
+  filter: blur(56px);
 }

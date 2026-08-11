@@ -1,31 +1,39 @@
 'use client';
 
-import {
-  AlertCircle,
-  ArrowRight,
-  Languages,
-  LoaderCircle,
-  MessageSquareQuote,
-  Sparkles,
-  WandSparkles
-} from 'lucide-react';
-import { useState, useTransition } from 'react';
+import { AlertCircle, Check, Heart, Languages, LoaderCircle, Shuffle, Sparkles, WandSparkles } from 'lucide-react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 
+import { AuroraBackground } from '@/components/aurora-background';
 import { CopyButton } from '@/components/copy-button';
-import type {
-  PhraseXAnalysis,
-  PhraseXTone,
-  PhraseXToneVariant
-} from '@/lib/phrasex-schema';
+import { PhraseXLogo } from '@/components/phrasex-logo';
+import type { PhraseXAnalysis, PhraseXTone, PhraseXToneVariant } from '@/lib/phrasex-schema';
 import { cn } from '@/lib/utils';
 
+/** Pool the "Try sample" button draws from — English, Hindi and Hinglish. */
 const samples = [
   'kal meeting me thoda late aaunga because traffic bahut heavy hoga',
   "i didn't went there because nobody were telling me the proper address",
-  'mujhe client ko bolna hai ki we need more time to finish the dashboard'
+  'mujhe client ko bolna hai ki we need more time to finish the dashboard',
+  'sir mai kal office nahi aa paunga kyunki meri tabiyat kharab hai',
+  "he don't have any idea about how much efforts we putted in this release",
+  'aap please ek baar check kar lijiye ki payment gateway sahi kaam kar raha hai ya nahi',
+  'team ko bol dena ki demo postpone ho gaya hai till next monday',
+  'i am working on this issue since morning but still it is not resolving',
+  'humein customer ko batana padega ki refund process me 5-7 din lagenge',
+  'she told me that the report was already send to the manager yesterday'
 ];
 
 const toneCards: PhraseXTone[] = ['casual', 'friendly', 'professional', 'concise'];
+
+/** Shown in the footer — the short version of what the app is good for. */
+const features = [
+  'Detects English, Hindi or Hinglish',
+  'Rewrites without changing your meaning',
+  'Explains every grammar fix',
+  'Original vs correction, side by side',
+  'Four tones, generated only on demand',
+  'One-click copy on every output'
+];
 
 type ApiResponse = {
   analysis?: PhraseXAnalysis;
@@ -37,28 +45,88 @@ type ToneResponse = {
   error?: string;
 };
 
-function SectionFrame({
+/**
+ * Shared styling for the action buttons (Analyze, Generate, Regenerate) so
+ * they stay identical — only the label differs.
+ *
+ * - `idle`  — the accent gradient call to action.
+ * - `busy`  — request in flight.
+ * - `muted` — available but secondary, or not usable yet.
+ */
+function actionButtonClass(state: 'idle' | 'busy' | 'muted') {
+  return cn(
+    'inline-flex items-center gap-2 self-start rounded-full px-4 py-2 text-xs font-semibold transition',
+    state === 'busy' && 'cursor-not-allowed bg-accent-soft text-accent',
+    state === 'muted' &&
+      'border border-glass-line-soft bg-white/38 text-ink-2 hover:border-accent/35 hover:text-accent',
+    state === 'idle' &&
+      'bg-gradient-to-br from-accent-2 to-accent text-white shadow-[0_8px_20px_rgba(188,81,214,0.28)] hover:shadow-[0_12px_26px_rgba(188,81,214,0.36)]'
+  );
+}
+
+function GlassCard({ className, children }: { className?: string; children: React.ReactNode }) {
+  return (
+    <section
+      className={cn(
+        'rounded-[28px] border border-glass-line bg-glass shadow-[var(--shadow-card)] backdrop-blur-3xl',
+        className
+      )}
+    >
+      {children}
+    </section>
+  );
+}
+
+function CardHead({
   title,
   subtitle,
-  action,
-  children
+  meta,
+  action
 }: {
   title: string;
   subtitle?: string;
+  meta?: React.ReactNode;
   action?: React.ReactNode;
-  children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[28px] border border-white/10 bg-slate-950/70 p-5 shadow-[0_24px_80px_rgba(3,7,18,0.45)] backdrop-blur">
-      <div className="mb-4 flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold tracking-[0.32em] text-cyan-300 uppercase">{title}</p>
-          {subtitle ? <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">{subtitle}</p> : null}
-        </div>
-        {action}
+    <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-5 pb-4">
+      <div>
+        <p className="text-[11px] font-semibold tracking-[0.2em] text-ink-3 uppercase">{title}</p>
+        {subtitle ? (
+          <p className="mt-1.5 font-display text-lg leading-tight font-semibold tracking-[-0.015em] text-ink">
+            {subtitle}
+          </p>
+        ) : null}
       </div>
+      {action ??
+        (meta ? (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {typeof meta === 'string' ? <Chip className="tabular-nums">{meta}</Chip> : meta}
+          </div>
+        ) : null)}
+    </div>
+  );
+}
+
+/** Small rounded label used for counters and static facts. */
+function Chip({ className, children }: { className?: string; children: React.ReactNode }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full border border-glass-line-soft bg-glass-soft px-3 py-1.5 text-[11px] font-semibold text-ink-2',
+        className
+      )}
+    >
       {children}
-    </section>
+    </span>
+  );
+}
+
+function Placeholder({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-3xl border border-dashed border-white/45 bg-white/12 px-6 py-10 text-center text-sm font-medium text-ink-3">
+      {children}
+    </div>
   );
 }
 
@@ -70,9 +138,31 @@ export function PhraseXApp() {
   const [toneVariants, setToneVariants] = useState<Partial<Record<PhraseXTone, string>>>({});
   const [toneErrors, setToneErrors] = useState<Partial<Record<PhraseXTone, string>>>({});
   const [loadingTone, setLoadingTone] = useState<Partial<Record<PhraseXTone, boolean>>>({});
+  /** Button label while a request runs: 'Analyzing' for the first second, then 'Rewriting'. */
+  const [analyzeStage, setAnalyzeStage] = useState<'analyzing' | 'rewriting'>('analyzing');
+  const stageTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (stageTimer.current !== null) {
+        window.clearTimeout(stageTimer.current);
+      }
+    };
+  }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    setAnalyzeStage('analyzing');
+
+    if (stageTimer.current !== null) {
+      window.clearTimeout(stageTimer.current);
+    }
+
+    stageTimer.current = window.setTimeout(() => {
+      setAnalyzeStage('rewriting');
+      stageTimer.current = null;
+    }, 1000);
 
     startTransition(async () => {
       setError(null);
@@ -101,8 +191,15 @@ export function PhraseXApp() {
     });
   }
 
-  function applySample(sample: string) {
-    setText(sample);
+  /**
+   * Drops a random sample into the textarea. Never repeats what is already
+   * there, so a second click always visibly changes something.
+   */
+  function applyRandomSample() {
+    const pool = samples.filter((sample) => sample !== text);
+    const next = pool[Math.floor(Math.random() * pool.length)];
+
+    setText(next);
     setError(null);
   }
 
@@ -143,250 +240,313 @@ export function PhraseXApp() {
     }));
   }
 
+  const generatedTones = toneCards.filter((tone) => Boolean(toneVariants[tone])).length;
+  const isGeneratingTone = toneCards.some((tone) => Boolean(loadingTone[tone]));
+  const isBusy = isPending || isGeneratingTone;
+
   return (
-    <div className="relative flex w-full flex-1 justify-center overflow-hidden">
-      {/* <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.28),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(251,191,36,0.16),_transparent_28%)]" /> */}
-      {/* <div className="pointer-events-none absolute inset-x-0 bottom-0 h-96 bg-[radial-gradient(circle_at_bottom,_rgba(14,165,233,0.12),_transparent_34%)]" /> */}
+    <div className="relative w-full flex-1">
+      <AuroraBackground busy={isBusy} />
 
-      <div className="flex w-full flex-1 flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
-        <header className="rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(8,15,31,0.94),rgba(6,10,20,0.86))] p-6 shadow-[0_30px_120px_rgba(8,15,31,0.5)] sm:p-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-[11px] font-semibold tracking-[0.32em] text-cyan-200 uppercase">
-                <Sparkles className="size-3.5" />
-                AI sentence studio
-              </div>
-              <h1 className="mt-5 text-4xl leading-tight font-semibold tracking-[-0.04em] text-white sm:text-5xl">
-                Rewrite raw text into polished English without changing the meaning.
-              </h1>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3 lg:max-w-[620px] xl:max-w-[720px]">
-              {[
-                {
-                  label: 'Input styles',
-                  value: 'English + Hindi + Hinglish'
-                },
-                {
-                  label: 'Outputs',
-                  value: 'Rewrite + issues + tones'
-                },
-                {
-                  label: 'Stack',
-                  value: 'Next.js + LangChain + OpenAI'
-                }
-              ].map((item) => (
-                <div key={item.label} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  <p className="text-[11px] tracking-[0.28em] text-slate-400 uppercase">{item.label}</p>
-                  <p className="mt-2 text-sm font-medium text-white">{item.value}</p>
-                </div>
-              ))}
-            </div>
+      <div className="relative z-10 mx-auto w-full max-w-[1380px] px-5 pb-24 sm:px-7 lg:px-10">
+        {/* Single-row glass top bar — no hero banner, no tagline */}
+        <header className="sticky top-4 z-20 mt-4 mb-6 flex items-center justify-between gap-3 rounded-full border border-glass-line bg-glass-strong px-4 py-2.5 shadow-[var(--shadow-card)] backdrop-blur-3xl sm:px-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <PhraseXLogo className="drop-shadow-[0_6px_16px_rgba(188,81,214,0.32)]" />
+            <p className="font-display text-[19px] leading-none font-semibold tracking-[-0.02em] text-ink">PhraseX</p>
           </div>
+
+          <span
+            className={cn(
+              'inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold transition',
+              isBusy ? 'bg-accent-soft text-accent' : 'border border-glass-line-soft bg-white/34 text-ink-2'
+            )}
+          >
+            {isBusy ? (
+              <>
+                <LoaderCircle className="size-3.5 animate-spin" />
+                Working
+              </>
+            ) : (
+              <>
+                <Sparkles className="size-3.5 text-accent" />
+                Ready
+              </>
+            )}
+          </span>
         </header>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.16fr)_minmax(0,0.84fr)] 2xl:grid-cols-[minmax(0,1.22fr)_minmax(0,0.78fr)]">
-          <SectionFrame
-            title="Input"
-            subtitle="Keep it to a sentence or short paragraph. The model rewrites the text itself, not the intent behind it."
-          >
-            <form className="space-y-5" onSubmit={handleSubmit}>
-              <label className="block">
-                <span className="sr-only">Sentence input</span>
-                <textarea
-                  value={text}
-                  onChange={(event) => setText(event.target.value)}
-                  placeholder="Type or paste your sentence here..."
-                  className="min-h-72 w-full resize-none rounded-[24px] border border-white/12 bg-black/20 px-5 py-4 text-base leading-7 text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300/60 focus:bg-black/30"
-                />
-              </label>
+        {/*
+          Two columns on desktop: input + tone variants on the left, rewrite +
+          grammar on the right. On mobile the wrappers collapse to
+          `display: contents`, so all five cards become direct grid items and
+          the `order-*` classes keep the original single-column sequence:
+          input → error → rewrite → grammar → tones.
+        */}
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+          {/* ------------- INPUT + TONE VARIANTS ------------- */}
+          <div className="contents lg:block lg:space-y-5">
+            <GlassCard className="order-1">
+              <CardHead
+                title="Input"
+                subtitle="Your text"
+                meta={
+                  <>
+                    <Chip>English · Hindi · Hinglish</Chip>
+                    <Chip className="tabular-nums">{text.length} / 1500</Chip>
+                  </>
+                }
+              />
 
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-slate-400">{text.length}/1500 characters</p>
-                <button
-                  type="submit"
-                  disabled={isPending || text.trim().length === 0}
-                  className={cn(
-                    'inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold tracking-[0.22em] uppercase transition',
-                    isPending || text.trim().length === 0
-                      ? 'cursor-not-allowed bg-slate-800 text-slate-500'
-                      : 'bg-cyan-300 text-slate-950 hover:bg-cyan-200'
-                  )}
-                >
-                  {isPending ? (
-                    <>
-                      <LoaderCircle className="size-4 animate-spin" />
-                      Rewriting
-                    </>
-                  ) : (
-                    <>
-                      Analyze text
-                      <ArrowRight className="size-4" />
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
+              <div className="px-6 pb-6">
+                <form onSubmit={handleSubmit}>
+                  <label className="block">
+                    <span className="sr-only">Sentence input</span>
+                    <textarea
+                      value={text}
+                      onChange={(event) => setText(event.target.value)}
+                      placeholder="Type or paste your sentence here..."
+                      spellCheck={false}
+                      className="text-soft min-h-60 w-full resize-y rounded-3xl border border-glass-line-soft bg-white/26 px-5 py-4 text-xl leading-relaxed font-bold tracking-[-0.014em] caret-accent shadow-[inset_0_1px_2px_rgba(255,255,255,0.6)] outline-none transition placeholder:font-normal placeholder:text-ink-3 placeholder:[text-shadow:none] focus:border-accent/45 focus:bg-white/42 focus:ring-4 focus:ring-accent-soft"
+                    />
+                  </label>
 
-            <div className="mt-6 border-t border-white/10 pt-5">
-              <div className="flex items-center gap-2 text-sm text-slate-300">
-                <MessageSquareQuote className="size-4 text-cyan-300" />
-                Try a sample
-              </div>
-              <div className="mt-3 flex flex-wrap gap-3">
-                {samples.map((sample) => (
-                  <button
-                    key={sample}
-                    type="button"
-                    onClick={() => applySample(sample)}
-                    className="rounded-full border border-white/12 bg-white/5 px-4 py-2 text-left text-sm text-slate-300 transition hover:border-cyan-300/40 hover:bg-cyan-300/10 hover:text-white"
-                  >
-                    {sample}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </SectionFrame>
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-xs font-medium text-ink-3 tabular-nums">{text.length} / 1500 characters</p>
 
-          <div className="space-y-6">
-            <SectionFrame
-              title="Primary rewrite"
-              subtitle="The core English rewrite that preserves your meaning while cleaning up grammar and tone."
-              action={result ? <CopyButton text={result.englishRewrite} /> : undefined}
-            >
-              {result ? (
-                <div className="space-y-5">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-medium tracking-[0.18em] text-emerald-200 uppercase">
-                    <Languages className="size-3.5" />
-                    Detected: {result.detectedInput}
-                  </div>
-                  <p className="text-xl leading-9 font-medium tracking-[-0.02em] text-white">{result.englishRewrite}</p>
-                  <div className="rounded-3xl border border-white/8 bg-white/[0.04] p-4">
-                    <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">Improved tone</p>
-                    <p className="mt-2 text-sm leading-7 text-slate-200">{result.improvedTone}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-[24px] border border-dashed border-white/12 bg-black/10 p-8 text-sm leading-7 text-slate-400">
-                  Your rewritten English sentence will appear here.
-                </div>
-              )}
-            </SectionFrame>
-
-            <SectionFrame
-              title="Grammar notes"
-              subtitle="Short, practical explanations of what was wrong in the original text."
-            >
-              {error ? (
-                <div className="rounded-[24px] border border-rose-400/20 bg-rose-400/10 p-4 text-sm text-rose-100">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="mt-0.5 size-4 shrink-0" />
-                    <p>{error}</p>
-                  </div>
-                </div>
-              ) : null}
-
-              {result ? (
-                <div className="space-y-4">
-                  <div className="rounded-[24px] border border-white/8 bg-white/[0.04] p-4">
-                    <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">Summary</p>
-                    <p className="mt-2 text-sm leading-7 text-slate-200">{result.grammarSummary}</p>
-                  </div>
-
-                  {result.grammarIssues.length > 0 ? (
-                    <div className="space-y-3">
-                      {result.grammarIssues.map((issue, index) => (
-                        <article
-                          key={`${issue.original}-${index}`}
-                          className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4"
-                        >
-                          <div className="flex items-center gap-2 text-[11px] tracking-[0.28em] text-amber-200 uppercase">
-                            <WandSparkles className="size-3.5" />
-                            Issue {index + 1}
-                          </div>
-                          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                            <div>
-                              <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Original</p>
-                              <p className="mt-1 text-sm leading-6 text-slate-200">{issue.original}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Correction</p>
-                              <p className="mt-1 text-sm leading-6 text-white">{issue.correction}</p>
-                            </div>
-                          </div>
-                          <p className="mt-3 text-sm leading-6 text-slate-400">{issue.explanation}</p>
-                        </article>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="rounded-[24px] border border-emerald-300/20 bg-emerald-300/10 p-4 text-sm text-emerald-100">
-                      No major grammar issues were found. The rewrite mainly improves tone and clarity.
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="rounded-[24px] border border-dashed border-white/12 bg-black/10 p-8 text-sm leading-7 text-slate-400">
-                  Grammar explanations will show up here after analysis.
-                </div>
-              )}
-            </SectionFrame>
-
-            <SectionFrame
-              title="Tone variants"
-              subtitle="Generate only the single tone you need so you do not spend tokens on unused variants."
-            >
-              {result ? (
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
-                  {toneCards.map((tone) => (
-                    <article key={tone} className="rounded-[24px] border border-white/8 bg-white/[0.04] p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <p className="text-xs font-semibold tracking-[0.28em] text-cyan-200 uppercase">{tone}</p>
-                        {toneVariants[tone] ? <CopyButton text={toneVariants[tone] ?? ''} /> : null}
-                      </div>
-
-                      {toneVariants[tone] ? (
-                        <p className="mt-3 text-sm leading-7 text-slate-200">{toneVariants[tone]}</p>
-                      ) : (
-                        <p className="mt-3 text-sm leading-7 text-slate-400">
-                          Generate this tone only when you need it.
-                        </p>
-                      )}
-
-                      {toneErrors[tone] ? (
-                        <p className="mt-3 text-sm leading-6 text-rose-200">{toneErrors[tone]}</p>
-                      ) : null}
-
+                    <div className="flex flex-wrap items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => handleGenerateTone(tone)}
-                        disabled={loadingTone[tone]}
+                        onClick={applyRandomSample}
+                        disabled={isPending}
+                        className={cn(actionButtonClass('muted'), isPending && 'cursor-not-allowed')}
+                      >
+                        <Shuffle className="size-3.5" />
+                        Try sample
+                      </button>
+
+                      <button
+                        type="submit"
+                        disabled={isPending || text.trim().length === 0}
                         className={cn(
-                          'mt-4 inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold tracking-[0.22em] uppercase transition',
-                          loadingTone[tone]
-                            ? 'cursor-not-allowed bg-slate-800 text-slate-500'
-                            : 'bg-white/8 text-slate-100 hover:bg-cyan-300 hover:text-slate-950'
+                          actionButtonClass(isPending ? 'busy' : text.trim().length === 0 ? 'muted' : 'idle'),
+                          text.trim().length === 0 && 'cursor-not-allowed'
                         )}
                       >
-                        {loadingTone[tone] ? (
+                        {isPending ? (
                           <>
                             <LoaderCircle className="size-3.5 animate-spin" />
-                            Generating
+                            {analyzeStage === 'analyzing' ? 'Analyzing' : 'Rewriting'}
                           </>
-                        ) : toneVariants[tone] ? (
-                          'Regenerate'
                         ) : (
-                          'Generate'
+                          <>
+                            <Sparkles className="size-3.5" />
+                            Analyze text
+                          </>
                         )}
                       </button>
-                    </article>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </GlassCard>
+            <GlassCard className="order-5">
+              <CardHead
+                title="Tone variants"
+                subtitle="Generate only the tone you need"
+                meta={result ? `${generatedTones} / ${toneCards.length} generated` : undefined}
+              />
+
+              <div className="px-6 pb-6">
+                {result ? (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {toneCards.map((tone) => {
+                      const variant = toneVariants[tone];
+
+                      return (
+                        <article
+                          key={tone}
+                          className={cn(
+                            'flex flex-col rounded-3xl border px-5 py-4 transition',
+                            variant
+                              ? 'border-white/55 bg-white/45 shadow-[var(--shadow-card)]'
+                              : 'border-glass-line-soft bg-white/18'
+                          )}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">{tone}</p>
+                            {variant ? <CopyButton text={variant} iconOnly /> : null}
+                          </div>
+
+                          {variant ? (
+                            <p className="text-soft mt-3 flex-1 text-[15px] leading-relaxed font-semibold tracking-[-0.01em] text-ink">
+                              {variant}
+                            </p>
+                          ) : (
+                            <p className="mt-3 flex-1 text-sm leading-relaxed font-medium text-ink-3">
+                              Not generated yet — create it only when you need it.
+                            </p>
+                          )}
+
+                          {toneErrors[tone] ? (
+                            <p className="mt-3 text-[13px] leading-snug font-semibold text-bad">{toneErrors[tone]}</p>
+                          ) : null}
+
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateTone(tone)}
+                            disabled={loadingTone[tone]}
+                            className={cn(
+                              'mt-4',
+                              actionButtonClass(loadingTone[tone] ? 'busy' : variant ? 'muted' : 'idle')
+                            )}
+                          >
+                            {loadingTone[tone] ? (
+                              <>
+                                <LoaderCircle className="size-3.5 animate-spin" />
+                                Generating
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="size-3.5" />
+                                {variant ? 'Regenerate' : 'Generate'}
+                              </>
+                            )}
+                          </button>
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <Placeholder>Tone variants will be available after the base rewrite is ready.</Placeholder>
+                )}
+              </div>
+            </GlassCard>
+          </div>
+
+          {/* ------------- REWRITE + GRAMMAR ------------- */}
+          <div className="contents lg:block lg:space-y-5">
+            {error ? (
+              <div className="order-2 flex items-start gap-3 rounded-[28px] border border-white/45 bg-bad-soft px-5 py-4 text-sm font-semibold text-bad backdrop-blur-3xl">
+                <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                <p>{error}</p>
+              </div>
+            ) : null}
+
+            {/* PRIMARY REWRITE */}
+            <GlassCard className="order-3 border-white/55 bg-glass-strong shadow-[var(--shadow-lift)]">
+              <CardHead
+                title="Primary rewrite"
+                subtitle="Same meaning, cleaner English"
+                action={result ? <CopyButton text={result.englishRewrite} /> : undefined}
+              />
+
+              <div className="px-6 pb-6">
+                {result ? (
+                  <div>
+                    <span className="inline-flex items-center gap-2 rounded-full bg-good-soft px-3 py-1.5 text-[11px] font-semibold tracking-[0.08em] text-good uppercase">
+                      <Languages className="size-3.5" />
+                      Detected input: {result.detectedInput}
+                    </span>
+
+                    {/* Painted with the action buttons' gradient via bg-clip-text. */}
+                    <p className="mt-4 bg-gradient-to-br from-accent-2 to-accent bg-clip-text font-display text-[26px] leading-[1.4] font-semibold tracking-[-0.025em] text-transparent drop-shadow-[0_1px_2px_rgba(188,81,214,0.4)] sm:text-[28px]">
+                      {result.englishRewrite}
+                    </p>
+
+                    <div className="mt-5 rounded-3xl border border-glass-line-soft bg-white/26 px-5 py-4">
+                      <p className="text-[11px] font-semibold tracking-[0.2em] text-accent uppercase">Improved tone</p>
+                      <p className="text-soft mt-2 text-[15px] leading-relaxed font-medium text-ink-2">{result.improvedTone}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <Placeholder>Your rewritten English sentence will appear here.</Placeholder>
+                )}
+              </div>
+            </GlassCard>
+
+            {/* GRAMMAR NOTES */}
+            <GlassCard className="order-4">
+              <CardHead
+                title="Grammar notes"
+                subtitle="What was wrong, and why"
+                meta={result ? `${result.grammarIssues.length} issues` : undefined}
+              />
+
+              <div className="px-6 pb-6">
+                {result ? (
+                  <div>
+                    <div className="rounded-3xl border border-glass-line-soft bg-accent-soft px-5 py-4">
+                      <p className="text-[11px] font-semibold tracking-[0.2em] text-accent uppercase">Summary</p>
+                      <p className="text-soft mt-2 text-[15px] leading-relaxed font-medium text-ink-2">{result.grammarSummary}</p>
+                    </div>
+
+                    {result.grammarIssues.length > 0 ? (
+                      <div className="mt-4 space-y-3">
+                        {result.grammarIssues.map((issue, index) => (
+                          <article
+                            key={`${issue.original}-${index}`}
+                            className="overflow-hidden rounded-3xl border border-glass-line-soft bg-white/26"
+                          >
+                            <div className="flex items-center gap-2 border-b border-white/38 px-5 py-3 text-[11px] font-semibold tracking-[0.18em] text-ink-3 uppercase">
+                              <WandSparkles className="size-3.5 text-accent" />
+                              <span className="text-ink">Issue {String(index + 1).padStart(2, '0')}</span>
+                            </div>
+
+                            <div className="grid sm:grid-cols-2">
+                              <div className="border-b border-white/38 px-5 py-4 sm:border-b-0 sm:border-r">
+                                <p className="text-[10px] font-semibold tracking-[0.18em] text-bad uppercase">
+                                  Original
+                                </p>
+                                <p className="text-soft mt-2 text-[15px] leading-snug font-semibold text-bad line-through decoration-[color:var(--bad)]/40">
+                                  {issue.original}
+                                </p>
+                              </div>
+                              <div className="px-5 py-4">
+                                <p className="text-[10px] font-semibold tracking-[0.18em] text-good uppercase">
+                                  Correction
+                                </p>
+                                <p className="text-soft mt-2 text-[15px] leading-snug font-semibold text-good">
+                                  {issue.correction}
+                                </p>
+                              </div>
+                            </div>
+
+                            <p className="text-soft border-t border-white/38 bg-white/18 px-5 py-4 text-sm leading-relaxed font-medium text-ink-2">
+                              {issue.explanation}
+                            </p>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="mt-4 flex items-start gap-3 rounded-3xl border border-glass-line-soft bg-good-soft px-5 py-4 text-sm font-semibold text-good">
+                        <Check className="mt-0.5 size-4 shrink-0" />
+                        <p>No major grammar issues were found. The rewrite mainly improves tone and clarity.</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <Placeholder>Grammar explanations will show up here after analysis.</Placeholder>
+                )}
+              </div>
+            </GlassCard>
+            {/* FOOTER */}
+            <GlassCard className="mt-5">
+              <div className="px-6 pt-5 pb-6">
+                <p className="text-[11px] font-semibold tracking-[0.2em] text-ink-3 uppercase">What PhraseX does</p>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {features.map((feature) => (
+                    <Chip key={feature}>{feature}</Chip>
                   ))}
                 </div>
-              ) : (
-                <div className="rounded-[24px] border border-dashed border-white/12 bg-black/10 p-8 text-sm leading-7 text-slate-400">
-                  Tone variants will be available after the base rewrite is ready.
-                </div>
-              )}
-            </SectionFrame>
+
+                <p className="mt-5 border-t border-white/38 pt-4 text-center text-xs font-medium text-ink-3">
+                  <span className="font-semibold lowercase text-accent">abhishek</span> · made with{' '}
+                  <Heart className="inline size-3.5 align-[-2px] fill-accent text-accent" />
+                </p>
+              </div>
+            </GlassCard>
           </div>
         </div>
       </div>
